@@ -1,5 +1,3 @@
-
-
 """
 Stock Analysis API - Real Data Integration
 Fetches live data from Yahoo Finance and other free APIs
@@ -38,12 +36,31 @@ def analyze_stock(ticker):
     try:
         ticker = ticker.upper()
         
-        # Fetch all data
-        stock_data = get_stock_data(ticker)
-        financial_data = get_financial_metrics(ticker)
-        analyst_data = get_analyst_consensus(ticker)
-        news_data = get_news_sentiment(ticker)
-        peer_data = get_peer_comparison(ticker, stock_data.get('industry'))
+        # Fetch all data with error handling
+        try:
+            stock_data = get_stock_data(ticker)
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Failed to fetch stock data: {str(e)}'}), 500
+            
+        try:
+            financial_data = get_financial_metrics(ticker)
+        except Exception as e:
+            financial_data = []
+            
+        try:
+            analyst_data = get_analyst_consensus(ticker)
+        except Exception as e:
+            analyst_data = {'consensusRating': 'N/A', 'priceTargets': {}}
+            
+        try:
+            news_data = get_news_sentiment(ticker)
+        except Exception as e:
+            news_data = {'overallSentiment': 'Neutral', 'recentNews': []}
+            
+        try:
+            peer_data = get_peer_comparison(ticker, stock_data.get('industry', 'Unknown'))
+        except Exception as e:
+            peer_data = {'industry': 'Unknown'}
         
         # Combine into analysis
         analysis = {
