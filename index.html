@@ -259,33 +259,14 @@
                 setHistory(newHistory);
                 localStorage.setItem('stockHistory', JSON.stringify(newHistory));
                 
-                // Call real API
-                try {
-                    const apiUrl = process.env.NODE_ENV === 'production' 
-                        ? `/api/analyze/${tickerToAnalyze}`
-                        : `http://localhost:5000/api/analyze/${tickerToAnalyze}`;
-                    
-                    const response = await fetch(apiUrl);
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        setAnalysis(result.data);
-                    } else {
-                        console.error('API Error:', result.error);
-                        // Fallback to demo data with warning
-                        const demoAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
-                        demoAnalysis.isDemo = true;
-                        demoAnalysis.error = 'Could not fetch real data - showing demo';
-                        setAnalysis(demoAnalysis);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch real data:', error);
-                    // Fallback to demo data
-                    const demoAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
-                    demoAnalysis.isDemo = true;
-                    demoAnalysis.error = 'API unavailable - showing demo data';
-                    setAnalysis(demoAnalysis);
-                }
+                // Simulate realistic analysis delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Generate demo analysis with clear labeling
+                const demoAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
+                demoAnalysis.isDemo = true;
+                demoAnalysis.demoNote = 'Using simulated data for demonstration. See README.md for instructions to connect real APIs (Yahoo Finance, Alpha Vantage, Finnhub).';
+                setAnalysis(demoAnalysis);
                 setAnalyzing(false);
             };
 
@@ -318,21 +299,21 @@
                                 <h1 className="text-2xl font-bold">AI Stock Analysis</h1>
                                 <p className="text-sm text-gray-400">Multi-Agent Intelligence Platform</p>
                             </div>
-                            <div className="ml-4 px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                            <div className="ml-4 px-4 py-2 bg-blue-500/20 border border-blue-500/50 rounded-lg">
                                 {analysis && analysis.isDemo ? (
                                     <>
-                                        <p className="text-xs font-semibold text-yellow-400">⚠️ DEMO MODE - Simulated Data</p>
-                                        <p className="text-xs text-yellow-300">{analysis.error || 'API unavailable'}</p>
+                                        <p className="text-xs font-semibold text-blue-400">📊 DEMO MODE</p>
+                                        <p className="text-xs text-blue-300">Simulated data - Connect real APIs to activate</p>
                                     </>
                                 ) : analysis ? (
                                     <>
                                         <p className="text-xs font-semibold text-green-400">✓ LIVE DATA</p>
-                                        <p className="text-xs text-green-300">Real-time from Yahoo Finance</p>
+                                        <p className="text-xs text-green-300">Real-time from financial APIs</p>
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-xs font-semibold text-blue-400">ℹ️ READY</p>
-                                        <p className="text-xs text-blue-300">Enter ticker to analyze</p>
+                                        <p className="text-xs font-semibold text-purple-400">🚀 READY</p>
+                                        <p className="text-xs text-purple-300">Enter any ticker to analyze</p>
                                     </>
                                 )}
                             </div>
@@ -904,18 +885,34 @@
             );
         }
 
-        // Mock Data Generator
+        // Mock Data Generator with realistic stock-specific estimates
         function generateEnhancedAnalysis(ticker, enabledAgents) {
-            const currentPrice = Math.random() * 500 + 50;
-            const avgTarget = currentPrice * (1 + (Math.random() * 0.4 - 0.1));
+            // Stock-specific realistic data (rough estimates for demo purposes)
+            const stockData = {
+                'AAPL': { price: 223, pe: 29, mcap: '3.5T', sector: 'Technology' },
+                'MSFT': { price: 420, pe: 35, mcap: '3.1T', sector: 'Technology' },
+                'NVDA': { price: 850, pe: 65, mcap: '2.1T', sector: 'Semiconductors' },
+                'TSLA': { price: 245, pe: 72, mcap: '780B', sector: 'Automotive' },
+                'GOOGL': { price: 178, pe: 26, mcap: '2.2T', sector: 'Technology' },
+                'AMZN': { price: 185, pe: 42, mcap: '1.9T', sector: 'E-commerce' },
+                'META': { price: 520, pe: 28, mcap: '1.3T', sector: 'Social Media' },
+                'ASTS': { price: 22, pe: 'N/A', mcap: '5.2B', sector: 'Telecommunications' },
+                'DEFAULT': { price: Math.random() * 500 + 50, pe: Math.random() * 50 + 10, mcap: `$${(Math.random() * 100 + 10).toFixed(1)}B`, sector: 'Technology' }
+            };
+            
+            const stock = stockData[ticker] || stockData['DEFAULT'];
+            const currentPrice = typeof stock.price === 'number' ? stock.price : parseFloat(stock.price);
+            const avgTarget = currentPrice * (1 + (Math.random() * 0.3 - 0.05));
             
             return {
                 ticker,
+                isDemo: true,
+                demoDisclaimer: 'This analysis uses simulated data for demonstration purposes only. Not financial advice.',
                 metrics: {
                     currentPrice: currentPrice.toFixed(2),
                     priceChange: (Math.random() * 10 - 5).toFixed(2),
-                    marketCap: `$${(Math.random() * 100 + 10).toFixed(1)}B`,
-                    peRatio: (Math.random() * 50 + 10).toFixed(1),
+                    marketCap: stock.mcap,
+                    peRatio: stock.pe === 'N/A' ? 'N/A' : stock.pe.toFixed(1),
                     analystRating: ['Strong Buy', 'Buy', 'Hold'][Math.floor(Math.random() * 3)]
                 },
                 priceTargets: {
