@@ -130,9 +130,9 @@ def get_stock_data(ticker):
                     'industry': info.get('industry', 'Unknown'),
                     'sector': info.get('sector', 'Unknown'),
                     'website': info.get('website', ''),
-                'description': info.get('longBusinessSummary', '')[:500],
-                'employees': info.get('fullTimeEmployees', 'N/A')
-            },
+                    'description': info.get('longBusinessSummary', '')[:500],
+                    'employees': info.get('fullTimeEmployees', 'N/A')
+                },
             'growthMetrics': {
                 'revenue': {
                     'current': info.get('revenueGrowth', 0) * 100 if info.get('revenueGrowth') else 0,
@@ -147,7 +147,9 @@ def get_stock_data(ticker):
                     'projected': 0
                 }
             }
-        }
+        except Exception as e:
+            # Re-raise with more context
+            raise Exception(f"yfinance error for {ticker}: {str(e)}")
     
     return get_cached_or_fetch(f'stock_{ticker}', fetch)
 
