@@ -133,18 +133,19 @@ def get_stock_data(ticker):
                     'description': info.get('longBusinessSummary', '')[:500],
                     'employees': info.get('fullTimeEmployees', 'N/A')
                 },
-            'growthMetrics': {
-                'revenue': {
-                    'current': info.get('revenueGrowth', 0) * 100 if info.get('revenueGrowth') else 0,
-                    'projected': info.get('revenueGrowth', 0) * 100 * 1.2 if info.get('revenueGrowth') else 0
-                },
-                'earnings': {
-                    'current': info.get('earningsGrowth', 0) * 100 if info.get('earningsGrowth') else 0,
-                    'projected': info.get('earningsGrowth', 0) * 100 * 1.3 if info.get('earningsGrowth') else 0
-                },
-                'marketShare': {
-                    'current': 0,  # Would need external data
-                    'projected': 0
+                'growthMetrics': {
+                    'revenue': {
+                        'current': info.get('revenueGrowth', 0) * 100 if info.get('revenueGrowth') else 0,
+                        'projected': info.get('revenueGrowth', 0) * 100 * 1.2 if info.get('revenueGrowth') else 0
+                    },
+                    'earnings': {
+                        'current': info.get('earningsGrowth', 0) * 100 if info.get('earningsGrowth') else 0,
+                        'projected': info.get('earningsGrowth', 0) * 100 * 1.3 if info.get('earningsGrowth') else 0
+                    },
+                    'marketShare': {
+                        'current': 0,  # Would need external data
+                        'projected': 0
+                    }
                 }
             }
         except Exception as e:
