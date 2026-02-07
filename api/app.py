@@ -96,28 +96,40 @@ def analyze_stock(ticker):
 def get_stock_data(ticker):
     """Fetch real-time stock data from Yahoo Finance"""
     def fetch():
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        hist = stock.history(period='1y')
-        
-        current_price = info.get('currentPrice') or info.get('regularMarketPrice', 0)
-        previous_close = info.get('previousClose', current_price)
-        
-        return {
-            'currentPrice': round(current_price, 2),
-            'priceChange': round(current_price - previous_close, 2),
-            'priceChangePercent': round(((current_price - previous_close) / previous_close * 100), 2),
-            'marketCap': format_market_cap(info.get('marketCap', 0)),
-            'peRatio': round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A',
-            'fiftyTwoWeekHigh': info.get('fiftyTwoWeekHigh'),
-            'fiftyTwoWeekLow': info.get('fiftyTwoWeekLow'),
-            'industry': info.get('industry', 'Unknown'),
-            'sector': info.get('sector', 'Unknown'),
-            'companyInfo': {
-                'name': info.get('longName', ticker),
+        try:
+            # Create ticker with user agent to avoid blocking
+            stock = yf.Ticker(ticker)
+            
+            # Try to get info - this is where it often fails
+            info = stock.info
+            
+            # Check if we actually got data
+            if not info or len(info) < 5:
+                raise Exception(f"No data returned for ticker {ticker}. Ticker may be invalid or Yahoo Finance is blocking requests.")
+            
+            hist = stock.history(period='1y')
+            
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice', 0)
+            previous_close = info.get('previousClose', current_price)
+            
+            if current_price == 0:
+                raise Exception(f"Could not fetch price for {ticker}. Data: {list(info.keys())[:10]}")
+            
+            return {
+                'currentPrice': round(current_price, 2),
+                'priceChange': round(current_price - previous_close, 2),
+                'priceChangePercent': round(((current_price - previous_close) / previous_close * 100), 2) if previous_close > 0 else 0,
+                'marketCap': format_market_cap(info.get('marketCap', 0)),
+                'peRatio': round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A',
+                'fiftyTwoWeekHigh': info.get('fiftyTwoWeekHigh'),
+                'fiftyTwoWeekLow': info.get('fiftyTwoWeekLow'),
                 'industry': info.get('industry', 'Unknown'),
                 'sector': info.get('sector', 'Unknown'),
-                'website': info.get('website', ''),
+                'companyInfo': {
+                    'name': info.get('longName', ticker),
+                    'industry': info.get('industry', 'Unknown'),
+                    'sector': info.get('sector', 'Unknown'),
+                    'website': info.get('website', ''),
                 'description': info.get('longBusinessSummary', '')[:500],
                 'employees': info.get('fullTimeEmployees', 'N/A')
             },
@@ -483,6 +495,27 @@ def format_large_number(value):
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+
+@app.route('/test/<ticker>', methods=['GET'])
+def test_ticker(ticker):
+    """Test endpoint to debug yfinance"""
+    try:
+        import yfinance as yf
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        return jsonify({
+            'ticker': ticker,
+            'info_keys': list(info.keys())[:20],
+            'has_data': len(info) > 0,
+            'sample_data': {
+                'currentPrice': info.get('currentPrice'),
+                'regularMarketPrice': info.get('regularMarketPrice'),
+                'longName': info.get('longName')
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'type': type(e).__name__}), 500
 
 
 if __name__ == '__main__':
