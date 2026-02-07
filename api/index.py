@@ -1,4 +1,5 @@
 from app import app
 
-# Export the Flask app for Vercel
-# Vercel will automatically handle WSGI
+# This is needed for Vercel to properly handle the Flask app
+if __name__ == "__main__":
+    app.run()
