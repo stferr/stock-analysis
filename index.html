@@ -259,11 +259,33 @@
                 setHistory(newHistory);
                 localStorage.setItem('stockHistory', JSON.stringify(newHistory));
                 
-                // Simulate analysis
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                const mockAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
-                setAnalysis(mockAnalysis);
+                // Call real API
+                try {
+                    const apiUrl = process.env.NODE_ENV === 'production' 
+                        ? `/api/analyze/${tickerToAnalyze}`
+                        : `http://localhost:5000/api/analyze/${tickerToAnalyze}`;
+                    
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        setAnalysis(result.data);
+                    } else {
+                        console.error('API Error:', result.error);
+                        // Fallback to demo data with warning
+                        const demoAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
+                        demoAnalysis.isDemo = true;
+                        demoAnalysis.error = 'Could not fetch real data - showing demo';
+                        setAnalysis(demoAnalysis);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch real data:', error);
+                    // Fallback to demo data
+                    const demoAnalysis = generateEnhancedAnalysis(tickerToAnalyze.toUpperCase(), enabledAgents);
+                    demoAnalysis.isDemo = true;
+                    demoAnalysis.error = 'API unavailable - showing demo data';
+                    setAnalysis(demoAnalysis);
+                }
                 setAnalyzing(false);
             };
 
@@ -295,6 +317,24 @@
                             <div>
                                 <h1 className="text-2xl font-bold">AI Stock Analysis</h1>
                                 <p className="text-sm text-gray-400">Multi-Agent Intelligence Platform</p>
+                            </div>
+                            <div className="ml-4 px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                                {analysis && analysis.isDemo ? (
+                                    <>
+                                        <p className="text-xs font-semibold text-yellow-400">⚠️ DEMO MODE - Simulated Data</p>
+                                        <p className="text-xs text-yellow-300">{analysis.error || 'API unavailable'}</p>
+                                    </>
+                                ) : analysis ? (
+                                    <>
+                                        <p className="text-xs font-semibold text-green-400">✓ LIVE DATA</p>
+                                        <p className="text-xs text-green-300">Real-time from Yahoo Finance</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-xs font-semibold text-blue-400">ℹ️ READY</p>
+                                        <p className="text-xs text-blue-300">Enter ticker to analyze</p>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <button 
